@@ -25,27 +25,72 @@ Model Notes:
 import tensorflow as tf
 import numpy as np
 import spacy as sp
-import re
 
-from spacy.tokenizer import Tokenizer
 from spacy.tokens import Doc
 
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import Dense, LSTM, Dropout, Bidirectional, Embedding,
-# from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+# from tensorflow.keras.initializers import Constant
+# from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
+from tensorflow.keras.layers import Attention, Bidirectional, Concatenate, Dropout, Embedding, GRU, LSTM
 
+## \/ \/ \/ NEEDED FOR cuDNN GPU ACCELERATION \/ \/ \/ ##
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
-wordPipeline = sp.load("en_core_web_sm", exclude=["tagger", "parser", "senter", "ner", "attribute_ruler", "lemmatizer"])
-charPipeline = sp.load("en_core_web_sm", exclude=["tagger", "parser", "senter", "ner", "attribute_ruler", "lemmatizer"])
+# spaCY pre-processing pipeline
+nlp = sp.load("en_core_web_sm", exclude=["tagger", "parser", "senter", "ner", "attribute_ruler", "lemmatizer"]) # Loading spaCY pipeline
 
-charPipeline.tokenizer = Tokenizer(charPipeline.vocab, infix_finditer=re.compile(r'''.''').finditer)
+text = "A man tokenizes" # Test text
+char = list(text) # Breakup text into individual characters
 
-text = "A man tokenizes"
+wordDoc = nlp(text) # Word Embeddings
+charDoc = Doc(nlp.vocab, char) # Char Embeddings
 
-wordDoc = wordPipeline(text)
-charDoc = charPipeline(text)
+'''
+Below is code from embedding article
+'''
+
+# Vectorizer = TextVectorization()
+
+# #fit the vectorizer on the text and extract the corpus vocabulary
+# Vectorizer.adapt(text.Text.to_numpy())
+# vocab = Vectorizer.get_vocabulary()
+
+# #generate the embedding matrix
+# num_tokens = len(vocab)
+# embedding_dim = len(wordDoc.vector)
+# embedding_matrix = np.zeros((num_tokens, embedding_dim))
+# for i, word in enumerate(vocab):
+#   embedding_matrix[i] = nlp(word).vector
+
+# #Load the embedding matrix as the weights matrix for the embedding layer and set trainable to False
+# Embedding_layer=Embedding(
+#   num_tokens,
+#   embedding_dim,
+#   embeddings_initializer=Constant(embedding_matrix),
+#   trainable=False)
+
+# Model Parameters
+rate = 0.3
+batch_size = 32
+
+# Model Encoder
+encoder = Sequential()
+encoder.add(Bidirectional(LSTM(200, return_sequences=True), input_shape='some shit'))
+encoder.add(Dropout(rate))
+encoder.add(Attention(inputs=200, return_attention_scores=False))
+
+# Do some crazy math shit here
+
+# Model Decoder
+decoder = Sequential()
+decoder.add(Bidirectional(LSTM(inputs='', units=200, return_sequences=True)))
+decoder.add(Dropout(rate))
+decoder.add(Concatenate()) # Concat word embeddings with character encodings
+# MASK HERE \/ \/ \/ \/
+decoder.add(LSTM(inputs='', mask='', units=200, return_sequences=True))
+
+# Model Output
 
 # inputTensor = tf.concat([wordDoc.tensor, charDoc.tensor], 2)
 
@@ -56,5 +101,6 @@ charDoc = charPipeline(text)
 
 # print('******************')
 
-# for token in doc2:
-#   print(token.text)
+print(charDoc)
+for token in charDoc:
+  print(token.text)
