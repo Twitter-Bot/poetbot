@@ -11,8 +11,8 @@ from tensorflow.keras.layers import RepeatVector
 from attention_decoder import AttentionDecoder
 
 ## \/ \/ \/ NEEDED FOR cuDNN GPU ACCELERATION \/ \/ \/ ##
-# physical_devices = tf.config.list_physical_devices('GPU')
-# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 # generate a sequence of random integers
 def generate_sequence(length, n_unique):
@@ -65,7 +65,7 @@ def attention_model(n_timesteps_in, n_features):
 # train and evaluate a model, return accuracy
 def train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features):
 	# train LSTM
-	for epoch in range(5000):
+	for epoch in range(1000):
 		# generate new random sequence
 		X,y = get_pair(n_timesteps_in, n_timesteps_out, n_features)
 		# fit model for one epoch on this sequence
@@ -80,19 +80,19 @@ def train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features):
 	return float(correct)/float(total)*100.0
 
 # configure problem
-n_features = 50
+n_features = 150
 n_timesteps_in = 5
 n_timesteps_out = 2
 n_repeats = 10
 # evaluate encoder-decoder model
-print('Encoder-Decoder Model')
-results = list()
-for _ in range(n_repeats):
-	model = baseline_model(n_timesteps_in, n_features)
-	accuracy = train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features)
-	results.append(accuracy)
-	print(accuracy)
-print('Mean Accuracy: %.2f%%' % (sum(results)/float(n_repeats)))
+# print('Encoder-Decoder Model')
+# results = list()
+# for _ in range(n_repeats):
+# 	model = baseline_model(n_timesteps_in, n_features)
+# 	accuracy = train_evaluate_model(model, n_timesteps_in, n_timesteps_out, n_features)
+# 	results.append(accuracy)
+# 	print(accuracy)
+# print('Mean Accuracy: %.2f%%' % (sum(results)/float(n_repeats)))
 # evaluate encoder-decoder with attention model
 print('Encoder-Decoder With Attention Model')
 results = list()

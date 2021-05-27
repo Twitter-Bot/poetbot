@@ -2,11 +2,12 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import regularizers, constraints, initializers, activations
 # from tensorflow.keras.layers.recurrent import Recurrent, _time_distributed_dense
-from tensorflow.keras.layers import InputSpec, RNN, TimeDistributed
+from tensorflow.keras.layers import InputSpec, Layer
+from .tdd import _time_distributed_dense
 
 tfPrint = lambda d, T: tf.Print(input_=T, data=[T, tf.shape(T)], message=d)
 
-class AttentionDecoder(RNN):
+class AttentionDecoder(Layer):
 
     def __init__(self, units, output_dim,
                  activation='tanh',
@@ -50,7 +51,7 @@ class AttentionDecoder(RNN):
         self.bias_constraint = constraints.get(bias_constraint)
 
         super(AttentionDecoder, self).__init__(**kwargs)
-        self.name = name
+        # self.name = name
         self.return_sequences = True  # must return sequences
 
     def build(self, input_shape):
@@ -202,7 +203,7 @@ class AttentionDecoder(RNN):
         # apply the a dense layer over the time dimension of the sequence
         # do it here because it doesn't depend on any previous steps
         # thefore we can save computation time:
-        self._uxpb = TimeDistributed(self.x_seq, self.U_a, b=self.b_a,
+        self._uxpb = _time_distributed_dense(self.x_seq, self.U_a, b=self.b_a,
                                              input_dim=self.input_dim,
                                              timesteps=self.timesteps,
                                              output_dim=self.units)
