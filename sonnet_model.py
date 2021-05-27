@@ -29,50 +29,28 @@ import spacy as sp
 from spacy.tokens import Doc
 
 from tensorflow.keras.models import Sequential
-# from tensorflow.keras.initializers import Constant
-# from tensorflow.keras.layers.experimental.preprocessing import TextVectorization
-from tensorflow.keras.layers import Attention, Bidirectional, Concatenate, Dropout, Embedding, GRU, LSTM
+from tensorflow.keras.layers import Attention, Bidirectional, Concatenate, Dense, Dropout, Embedding, GRU, LSTM
 
 ## \/ \/ \/ NEEDED FOR cuDNN GPU ACCELERATION \/ \/ \/ ##
-physical_devices = tf.config.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
+# physical_devices = tf.config.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 
 # spaCY pre-processing pipeline
 nlp = sp.load("en_core_web_sm", exclude=["tagger", "parser", "senter", "ner", "attribute_ruler", "lemmatizer"]) # Loading spaCY pipeline
 
-text = "A man tokenizes" # Test text
+text = "finna" # Test text
 char = list(text) # Breakup text into individual characters
 
 wordDoc = nlp(text) # Word Embeddings
 charDoc = Doc(nlp.vocab, char) # Char Embeddings
 
-'''
-Below is code from embedding article
-'''
-
-# Vectorizer = TextVectorization()
-
-# #fit the vectorizer on the text and extract the corpus vocabulary
-# Vectorizer.adapt(text.Text.to_numpy())
-# vocab = Vectorizer.get_vocabulary()
-
-# #generate the embedding matrix
-# num_tokens = len(vocab)
-# embedding_dim = len(wordDoc.vector)
-# embedding_matrix = np.zeros((num_tokens, embedding_dim))
-# for i, word in enumerate(vocab):
-#   embedding_matrix[i] = nlp(word).vector
-
-# #Load the embedding matrix as the weights matrix for the embedding layer and set trainable to False
-# Embedding_layer=Embedding(
-#   num_tokens,
-#   embedding_dim,
-#   embeddings_initializer=Constant(embedding_matrix),
-#   trainable=False)
-
 # Model Parameters
 rate = 0.3
 batch_size = 32
+
+print(wordDoc.tensor)
+print()
+print(nlp(text).tensor)
 
 # Model Encoder
 encoder = Sequential()
@@ -80,27 +58,24 @@ encoder.add(Bidirectional(LSTM(200, return_sequences=True), input_shape='some sh
 encoder.add(Dropout(rate))
 encoder.add(Attention(inputs=200, return_attention_scores=False))
 
+# Encoder Ouput -> Math (Calculation for weighted hidden states) -> GRU -> Final Output
+
 # Do some crazy math shit here
 
+# Decoder Input is character embeddings and
+
 # Model Decoder
+# Character Encodings \/
 decoder = Sequential()
-decoder.add(Bidirectional(LSTM(inputs='', units=200, return_sequences=True)))
+decoder.add(Bidirectional(LSTM(inputs='', units=200, merge_mode='concat', return_sequences=True))) # Produces Character Encodings
 decoder.add(Dropout(rate))
+# Concate Character Encodings with Word Embeddings
 decoder.add(Concatenate()) # Concat word embeddings with character encodings
 # MASK HERE \/ \/ \/ \/
 decoder.add(LSTM(inputs='', mask='', units=200, return_sequences=True))
 
 # Model Output
+output = Sequential()
+output.add(GRU())
+output.add(Dense())
 
-# inputTensor = tf.concat([wordDoc.tensor, charDoc.tensor], 2)
-
-# print(inputTensor)
-
-# for token in doc1:
-#   print(token.text)
-
-# print('******************')
-
-print(charDoc)
-for token in charDoc:
-  print(token.text)
